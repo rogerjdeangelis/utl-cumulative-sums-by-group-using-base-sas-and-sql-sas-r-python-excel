@@ -1,5 +1,3 @@
-# utl-cumulative-sums-by-group-using-base-sas-and-sql-sas-r-python-excel
-Cumulative sums by group using base sas and sql sas r python excel
     %let pgm=utl-cumulative-sums-by-group-using-base-sas-and-sql-sas-r-python-excel;
 
     %stop_submission;
@@ -21,6 +19,10 @@ Cumulative sums by group using base sas and sql sas r python excel
          3 python sql
          4 sas sql solution fails
            it does work if id x visit is unique you get a cartesian join)
+         5 sas hash
+           Keintz, Mark
+           mkeintz@outlook.com
+
 
     THESE SOULTIONS ONLY WORK WITH UNIQUE ID, VISIT
 
@@ -168,6 +170,34 @@ Cumulative sums by group using base sas and sql sas r python excel
     /*                         |      by  s1.id                                          |  x    10    20   166               */
     /*                         |         ,s1.visit                                       |                                    */
     /*                         | ;quit;                                                  |                                    */
+    /*                         |                                                         |                                    */
+    /*                         |----------------------------------------------------------------------------------------------*/
+    /*                         |                                                         |                                    */
+    /*                         | 5 SAS HASH                                              |    ID VISIT VALUE    CIM           */
+    /*                         | ==========                                              |                                    */
+    /*                         |                                                         | 1   n     1     1      1           */
+    /*                         | data want;                                              | 2   n     1     1      2           */
+    /*                         |   set sd1.have;                                         | 3   n     2     2      4           */
+    /*                         |   by id notsorted;                                      | 4   n     3     3      7           */
+    /*                         |   if _n_=1 then do;                                     | 5   n     4     4     11           */
+    /*                         |     declare hash h                                      | 6   n     5     5     16           */
+    /*                         |       (dataset:'sd1.have (obs=0)'                       | 7   n     6     6     22           */
+    /*                         |         ,ordered:'a'                                    | 8   n     7     7     29           */
+    /*                         |         ,multidata:'Y');                                | 9   n     8     8     37           */
+    /*                         |       h.definekey('visit');                             | 10  n     9     9     46           */
+    /*                         |       h.definedata(all:'Y');                            | 11  n    10    10     56           */
+    /*                         |       h.definedone();                                   | 12  x     1    11     11           */
+    /*                         |     declare hiter hi ('h');                             | 13  x     1    11     22           */
+    /*                         |   end;                                                  | 14  x     2    12     34           */
+    /*                         |   h.add();                                              | 15  x     3    13     47           */
+    /*                         |   if last.id;                                           | 16  x     4    14     61           */
+    /*                         |   do while (hi.next()=0);                               | 17  x     5    15     76           */
+    /*                         |     cum=sum(cum,value);                                 | 18  x     6    16     92           */
+    /*                         |     output;                                             | 19  x     7    17    109           */
+    /*                         |   end;                                                  | 20  x     8    18    127           */
+    /*                         |   h.clear();                                            | 21  x     9    19    146           */
+    /*                         | run;                                                    | 22  x    10    20    166           */
+    /*                         |                                                         |                                    */
     /**************************************************************************************************************************/
 
     /*                   _
@@ -483,6 +513,36 @@ Cumulative sums by group using base sas and sql sas r python excel
     /*  x       10       20       166                                                                                         */
     /**************************************************************************************************************************/
 
+    /*  _                     _               _
+    | || |    ___  __ _ ___  | |__   __ _ ___| |__
+    | || |_  / __|/ _` / __| | `_ \ / _` / __| `_ \
+    |__   _| \__ \ (_| \__ \ | | | | (_| \__ \ | | |
+       |_|   |___/\__,_|___/ |_| |_|\__,_|___/_| |_|
+
+    */
+
+    data want;
+      set sd1.have;
+      by id notsorted;
+      if _n_=1 then do;
+        declare hash h
+          (dataset:'sd1.have (obs=0)'
+            ,ordered:'a'
+            ,multidata:'Y');
+          h.definekey('visit');
+          h.definedata(all:'Y');
+          h.definedone();
+        declare hiter hi ('h');
+      end;
+      h.add();
+      if last.id;
+      do while (hi.next()=0);
+        cum=sum(cum,value);
+        output;
+      end;
+      h.clear();
+    run;
+
     /*              _
       ___ _ __   __| |
      / _ \ `_ \ / _` |
@@ -490,3 +550,4 @@ Cumulative sums by group using base sas and sql sas r python excel
      \___|_| |_|\__,_|
 
     */
+
